@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <title>Calculadora Inteligente RDS</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+    @import url('https://tectest.app.n8n.cloud/webhook/26e6fac6-7454-4e1a-8df5-74714bc873c6');
 
     * {
       box-sizing: border-box;
@@ -103,37 +103,55 @@
   </div>
 
   <script>
-    // Solo dura una hora activo el servicio, se debe de activar desde aca https://cors-anywhere.herokuapp.com/corsdemo
-    const flaskUrl = "https://cors-anywhere.herokuapp.com/http://100.26.151.211:5500/insert";
-    const webhook = "https://tectest.app.n8n.cloud/webhook/26e6fac6-7454-4e1a-8df5-74714bc873c6"
-    
+    // URL
+    const webhookUrl = "https://tectest.app.n8n.cloud/webhook/26e6fac6-7454-4e1a-8df5-74714bc873c6";
+
     document.getElementById('f').addEventListener('submit', async (e) => {
       e.preventDefault();
       const operacion = document.getElementById('oper').value.trim();
       const resp = document.getElementById('resp');
       resp.textContent = "Procesando...";
 
+      const payload = {
+        operation: operacion,
+        result: null,
+        client_info: {
+          user_agent: navigator.userAgent,
+          browser: navigator.userAgent.includes("Chrome") ? "Chrome" : "Otro",
+          country: "MX"
+        }
+      };
+
       try {
-        const res = await fetch(flaskUrl, {
+        const flaskUrl = "https://cors-anywhere.herokuapp.com/http://100.26.151.211:5500/insert";
+        // Enviar al webhook de n8n
+        const webhookRes = fetch(webhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            operation: operacion,
-            result: null, // se calculará después
-            client_info: {
-              user_agent: navigator.userAgent,
-              browser: navigator.userAgent.includes("Chrome") ? "Chrome" : "Otro",
-              country: "MX"
-            }
-          })
-        });
-        const data = await res.json();
-        resp.textContent = JSON.stringify(data, null, 2);
+          body: JSON.stringify(payload)
+        }).then(r => r.json());
+
+        // Enviar a Flask
+        const flaskRes = fetch(flaskUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).then(r => r.json());
+
+        // Esperar ambas respuestas
+        const [n8nResp, flaskResp] = await Promise.all([webhookRes, flaskRes]);
+
+        resp.textContent =
+          "📤 Enviado al Webhook de n8n:\n" +
+          JSON.stringify(n8nResp, null, 2) +
+          "\n\n------------------------------\n\n" +
+          "📤 Estado:\n" +
+          JSON.stringify(flaskResp, null, 2);
+
       } catch (err) {
-        resp.textContent = "Error de conexión con el servidor Flask.";
+        resp.textContent = "Error enviando datos al webhook";
       }
     });
   </script>
 </body>
 </html>
-
