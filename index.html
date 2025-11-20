@@ -105,7 +105,8 @@
   <script>
     // Solo dura una hora activo el servicio, se debe de activar desde aca https://cors-anywhere.herokuapp.com/corsdemo
     const flaskUrl = "https://cors-anywhere.herokuapp.com/http://100.26.151.211:5500/insert";
-
+    const webhook = "https://tectest.app.n8n.cloud/webhook/26e6fac6-7454-4e1a-8df5-74714bc873c6"
+    
     document.getElementById('f').addEventListener('submit', async (e) => {
       e.preventDefault();
       const operacion = document.getElementById('oper').value.trim();
